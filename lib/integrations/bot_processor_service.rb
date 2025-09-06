@@ -5,12 +5,30 @@ class Integrations::BotProcessorService
     message = event_data[:message]
     return unless should_run_processor?(message)
 
+    if event_name == 'message.updated' && message.input_select?
+      create_incoming_message_from_selection(message)
+      return
+    end
+
     process_content(message)
   rescue StandardError => e
     ChatwootExceptionTracker.new(e, account: (hook&.account || agent_bot&.account)).capture_exception
   end
 
   private
+
+  def create_incoming_message_from_selection(message)
+    content = message.content_attributes['submitted_values']&.first&.dig('value')
+    if content.present?
+      conversation.messages.create!(
+        content: content,
+        message_type: :incoming,
+        account_id: conversation.account_id,
+        inbox_id: conversation.inbox_id,
+        sender: conversation.contact
+      )
+    end
+  end
 
   def should_run_processor?(message)
     return if message.private?

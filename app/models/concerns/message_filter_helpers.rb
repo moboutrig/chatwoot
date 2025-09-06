@@ -6,8 +6,7 @@ module MessageFilterHelpers
   end
 
   def webhook_sendable?
-    # TODO: we should look into the message_type of integration messages and see if we can simplify this.
-    (incoming? || outgoing? || template?) || integrations? || input_select?
+    incoming? || outgoing? || template?
   end
 
   def slack_hook_sendable?
